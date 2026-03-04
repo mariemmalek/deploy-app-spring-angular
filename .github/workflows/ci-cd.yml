@@ -2,37 +2,38 @@ name: CI/CD Pipeline Spring-Angular
 
 on:
   push:
-    [cite_start]branches: [ main ] # Déclencheur sur push main [cite: 36]
+    branches:
+      - main
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        [cite_start]uses: actions/checkout@v3 # Récupération du code [cite: 37]
+        uses: actions/checkout@v3
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
-          [cite_start]username: ${{ secrets.DOCKERHUB_USERNAME }} # Secret GitHub [cite: 41]
-          [cite_start]password: ${{ secrets.DOCKERHUB_TOKEN }}    # Secret GitHub [cite: 42]
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Backend
         uses: docker/build-push-action@v4
         with:
-          [cite_start]context: ./springboot/app # Dossier du Dockerfile backend [cite: 11, 12]
+          context: ./springboot/app
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/springboot-backend:latest
 
       - name: Build and push Frontend
         uses: docker/build-push-action@v4
         with:
-          [cite_start]context: ./angular-app # Dossier du Dockerfile frontend [cite: 14]
+          context: ./angular-app
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/angular-frontend:latest
 
       - name: Test Application
         run: |
-          docker-compose up -d # Lancement via Docker Compose [cite: 50]
+          docker-compose up -d
           sleep 30
-          docker ps # Vérification démarrage [cite: 52]
+          docker ps
