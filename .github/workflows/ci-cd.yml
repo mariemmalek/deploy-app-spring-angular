@@ -1,39 +1,53 @@
 name: CI/CD Pipeline Spring-Angular
 
 on:
-  push:
-    branches:
-      - main
+push:
+branches:
+- main
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+build-and-push:
+runs-on: ubuntu-latest
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+```
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v3
 
-      - name: Build and push Backend
-        uses: docker/build-push-action@v4
-        with:
-          context: ./springboot/app
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/springboot-backend:latest
+  - name: Set up JDK
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'temurin'
+      java-version: '17'
 
-      - name: Build and push Frontend
-        uses: docker/build-push-action@v4
-        with:
-          context: ./angular-app
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/angular-frontend:latest
+  - name: Build Backend with Maven
+    run: |
+      cd springboot/app
+      mvn clean package -DskipTests
 
-      - name: Test Application
-        run: |
-          docker compose up -d
-          sleep 30
-          docker ps
+  - name: Login to Docker Hub
+    uses: docker/login-action@v2
+    with:
+      username: ${{ secrets.DOCKERHUB_USERNAME }}
+      password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  - name: Build and push Backend
+    uses: docker/build-push-action@v4
+    with:
+      context: ./springboot/app
+      push: true
+      tags: ${{ secrets.DOCKERHUB_USERNAME }}/springboot-backend:latest
+
+  - name: Build and push Frontend
+    uses: docker/build-push-action@v4
+    with:
+      context: ./angular-app
+      push: true
+      tags: ${{ secrets.DOCKERHUB_USERNAME }}/angular-frontend:latest
+
+  - name: Test Application
+    run: |
+      docker compose up -d
+      sleep 30
+      docker ps
+```
