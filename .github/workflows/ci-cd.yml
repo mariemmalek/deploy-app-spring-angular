@@ -1,53 +1,54 @@
-name: CI/CD Pipeline Spring-Angular
+name: CI Pipeline
 
 on:
-push:
-branches:
-- main
+  push:
+    branches:
+      - main
 
 jobs:
-build-and-push:
-runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-latest
 
-```
-steps:
-  - name: Checkout code
-    uses: actions/checkout@v3
+    steps:
 
-  - name: Set up JDK
-    uses: actions/setup-java@v4
-    with:
-      distribution: 'temurin'
-      java-version: '17'
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-  - name: Build Backend with Maven
-    run: |
-      cd springboot/app
-      mvn clean package -DskipTests
+    # Install Java
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
 
-  - name: Login to Docker Hub
-    uses: docker/login-action@v2
-    with:
-      username: ${{ secrets.DOCKERHUB_USERNAME }}
-      password: ${{ secrets.DOCKERHUB_TOKEN }}
+    # Build Spring Boot jar
+    - name: Build backend with Maven
+      run: |
+        cd springboot/app
+        mvn clean package -DskipTests
+    # Login to Docker Hub
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-  - name: Build and push Backend
-    uses: docker/build-push-action@v4
-    with:
-      context: ./springboot/app
-      push: true
-      tags: ${{ secrets.DOCKERHUB_USERNAME }}/springboot-backend:latest
+    # Build backend image
+    - name: Build backend image
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/spring-app:latest ./springboot/app
 
-  - name: Build and push Frontend
-    uses: docker/build-push-action@v4
-    with:
-      context: ./angular-app
-      push: true
-      tags: ${{ secrets.DOCKERHUB_USERNAME }}/angular-frontend:latest
+    # Build frontend image
+    - name: Build frontend image
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/angular-app:latest ./angular-app
 
-  - name: Test Application
-    run: |
-      docker compose up -d
-      sleep 30
-      docker ps
-```
+    # Push backend image
+    - name: Push backend image
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/spring-app:latest
+
+    # Push frontend image
+    - name: Push frontend image
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/angular-app:latest
+
+    # Run docker compose
+    - name: Run Docker Compose
+      run: docker compose up -d
